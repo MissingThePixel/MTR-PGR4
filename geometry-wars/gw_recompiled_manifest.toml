@@ -1,0 +1,18 @@
+
+[project]
+name = "gw_recompiled"
+sdk_version = "0.10.0"
+game_root = "../game-data"
+
+[entrypoint]
+setjmp_address = 0x82107C60
+longjmp_address = 0x82107820
+file_path = "../game-data/gw.xex"
+out_directory_path = "generated/gw"
+includes = []
+
+[entrypoint.functions]
+0x82124F18 = {}
+0x8211BC20 = {}
+0x820915C0 = {}
+0x820CD2D0 = {}

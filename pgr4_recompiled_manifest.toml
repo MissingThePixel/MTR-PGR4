@@ -1,0 +1,31 @@
+
+[project]
+name = "pgr4_recompiled"
+sdk_version = "0.10.0"
+game_root = "game-data"
+
+[entrypoint]
+file_path = "game-data/default.xex"
+out_directory_path = "generated/default"
+setjmp_address = 0x828a9c50
+longjmp_address = 0x828aa1d0
+includes = []
+
+[entrypoint.functions]
+0x824B8670 = {}
+0x82526280 = {}
+0x828DDA98 = {}
+0x829C23A0 = {}
+0x828E5488 = {}
+0x827cd4b8 = {}
+0x828fd7c0 = {}
+0x827cd930 = {}
+0x827cd7b8 = {}
+0x828fff98 = {}
+0x826ffdb8 = {}
+0x827ad090 = {}
+0x826c7a08 = {}
+0x82756214 = {}
+0x82704E30 = {}
+0x82746C84 = {}
+0x822C5970 = {}
