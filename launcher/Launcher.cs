@@ -45,6 +45,29 @@ internal static class Program {
     }
 }
 
+// Paint flat buttons explicitly so disabled captions remain readable on pale
+// backgrounds. Button still supplies keyboard activation and accessibility.
+internal sealed class LauncherButton : Button {
+    private bool hovered, pressed;
+    protected override void OnMouseEnter(EventArgs e) { hovered = true; Invalidate(); base.OnMouseEnter(e); }
+    protected override void OnMouseLeave(EventArgs e) { hovered = false; pressed = false; Invalidate(); base.OnMouseLeave(e); }
+    protected override void OnMouseDown(MouseEventArgs e) { pressed = e.Button == MouseButtons.Left; Invalidate(); base.OnMouseDown(e); }
+    protected override void OnMouseUp(MouseEventArgs e) { pressed = false; Invalidate(); base.OnMouseUp(e); }
+    protected override void OnKeyDown(KeyEventArgs e) { if (e.KeyCode == Keys.Space) { pressed = true; Invalidate(); } base.OnKeyDown(e); }
+    protected override void OnKeyUp(KeyEventArgs e) { pressed = false; Invalidate(); base.OnKeyUp(e); }
+    protected override void OnPaint(PaintEventArgs e) {
+        Color fill = !Enabled ? Color.FromArgb(241, 242, 245) : pressed ? FlatAppearance.MouseDownBackColor :
+            hovered ? FlatAppearance.MouseOverBackColor : BackColor;
+        e.Graphics.Clear(fill);
+        TextRenderer.DrawText(e.Graphics, Text, Font, ClientRectangle,
+            Enabled ? ForeColor : Color.FromArgb(145, 149, 157),
+            TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
+        if (Focused && ShowFocusCues) {
+            Rectangle focus = ClientRectangle; focus.Inflate(-4, -4);
+            ControlPaint.DrawFocusRectangle(e.Graphics, focus, ForeColor, fill);
+        }
+    }
+}
 internal sealed class LauncherForm : Form {
     private readonly string runtime = Program.RuntimeDirectory;
     private readonly string settingsFile;
@@ -54,10 +77,10 @@ internal sealed class LauncherForm : Form {
     private readonly CheckBox fullscreen = new CheckBox();
     private readonly CheckBox blur = new CheckBox();
     private readonly Label status = new Label();
-    private readonly Button play = new Button();
-    private readonly Button geometry = new Button();
-    private readonly Button browse = new Button();
-    private readonly Button save = new Button();
+    private readonly Button play = new LauncherButton();
+    private readonly Button geometry = new LauncherButton();
+    private readonly Button browse = new LauncherButton();
+    private readonly Button save = new LauncherButton();
     private bool running;
     private bool loading = true;
     private Process gameProcess;
@@ -74,65 +97,100 @@ internal sealed class LauncherForm : Form {
         AutoSize = true;
         AutoSizeMode = AutoSizeMode.GrowAndShrink;
         StartPosition = FormStartPosition.CenterScreen;
-        BackColor = Color.FromArgb(247, 248, 250);
+        BackColor = Color.White;
+        ForeColor = Color.FromArgb(27, 29, 34);
 
-        TableLayoutPanel layout = new TableLayoutPanel();
-        layout.Dock = DockStyle.Fill; layout.Padding = new Padding(22);
-        layout.AutoSize = true; layout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
-        layout.MinimumSize = new Size(650, 0);
-        layout.ColumnCount = 1; layout.RowCount = 8;
+        TableLayoutPanel shell = new TableLayoutPanel {
+            Dock = DockStyle.Fill, Padding = new Padding(28), AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink, ColumnCount = 2, RowCount = 1
+        };
+        shell.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 320));
+        shell.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        shell.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        Controls.Add(shell);
+        PictureBox artwork = new PictureBox {
+            Size = new Size(300, 300), SizeMode = PictureBoxSizeMode.Zoom,
+            Anchor = AnchorStyles.None, Margin = new Padding(0, 0, 20, 0)
+        };
+        using (Stream stream = typeof(LauncherForm).Assembly.GetManifestResourceStream("LauncherArtwork")) {
+            if (stream != null) using (Image image = Image.FromStream(stream)) artwork.Image = new Bitmap(image);
+        }
+        FormClosed += delegate { if (artwork.Image != null) artwork.Image.Dispose(); };
+        shell.Controls.Add(artwork, 0, 0);
+
+        TableLayoutPanel layout = new TableLayoutPanel {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            MinimumSize = new Size(520, 0), ColumnCount = 1, RowCount = 9,
+            Dock = DockStyle.Fill, Margin = new Padding(8, 0, 0, 0)
+        };
         layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
-        for (int row = 0; row < 8; row++) layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-        Controls.Add(layout);
-        Label title = new Label { Text = "MTR-PGR4", AutoSize = true,
-            Font = new Font("Segoe UI", 19, FontStyle.Bold), Margin = new Padding(0, 0, 0, 3) };
-        layout.Controls.Add(title);
-        layout.Controls.Add(new Label { Text = "MissingTheRecompilation: Project Gotham Racing 4", AutoSize = true,
-            Margin = new Padding(0, 0, 0, 16) });
-        layout.Controls.Add(new Label { Text = "Extracted game folder", AutoSize = true, Margin = new Padding(0, 0, 0, 4) });
+        for (int row = 0; row < 9; row++) layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        shell.Controls.Add(layout, 1, 0);
+        layout.Controls.Add(new Label {
+            Text = "Project Gotham Racing 4", AutoSize = true,
+            Font = new Font("Segoe UI", 21, FontStyle.Bold), Margin = new Padding(0, 0, 0, 26)
+        });
+        layout.Controls.Add(new Label { Text = "Game folder", AutoSize = true, Margin = new Padding(0, 0, 0, 8) });
 
-        TableLayoutPanel folderRow = new TableLayoutPanel();
-        folderRow.AutoSize = true; folderRow.Dock = DockStyle.Top; folderRow.ColumnCount = 2;
+        TableLayoutPanel folderRow = new TableLayoutPanel {
+            AutoSize = true, Dock = DockStyle.Top, ColumnCount = 2, Margin = new Padding(0)
+        };
         folderRow.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         folderRow.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         gameFolder.Dock = DockStyle.Fill; gameFolder.ReadOnly = true;
-        gameFolder.Margin = new Padding(0, 3, 10, 3);
-        browse.Text = "Browse…"; browse.AutoSize = true; browse.Click += Browse;
+        gameFolder.BackColor = Color.White; gameFolder.ForeColor = ForeColor;
+        gameFolder.BorderStyle = BorderStyle.FixedSingle;
+        gameFolder.Anchor = AnchorStyles.Left | AnchorStyles.Right;
+        gameFolder.Margin = new Padding(0, 8, 12, 8);
+        browse.Text = "Browse"; StyleButton(browse, false); browse.MinimumSize = new Size(104, 38);
+        browse.Click += Browse;
         folderRow.Controls.Add(gameFolder, 0, 0); folderRow.Controls.Add(browse, 1, 0);
         layout.Controls.Add(folderRow);
-        layout.Controls.Add(new Label { Text = "Choose your own extracted copy, containing default.xex and the Game and UI folders.",
-            AutoSize = true, MaximumSize = new Size(590, 0), Margin = new Padding(0, 3, 0, 16) });
+        layout.Controls.Add(new Label {
+            Text = "Select your extracted PGR4 folder.", AutoSize = true,
+            ForeColor = Color.FromArgb(95, 101, 113), Margin = new Padding(0, 6, 0, 20)
+        });
 
-        TableLayoutPanel options = new TableLayoutPanel();
-        options.AutoSize = true; options.Dock = DockStyle.Top; options.ColumnCount = 4;
-        options.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        TableLayoutPanel options = new TableLayoutPanel {
+            AutoSize = true, Dock = DockStyle.Top, ColumnCount = 2, RowCount = 3, Margin = new Padding(0)
+        };
         options.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        options.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         options.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
-        resolution.DropDownStyle = ComboBoxStyle.DropDownList;
-        resolution.Items.AddRange(new object[] { "720p (original)", "1440p" }); resolution.Dock = DockStyle.Fill;
-        frameRate.DropDownStyle = ComboBoxStyle.DropDownList;
-        frameRate.Items.AddRange(new object[] { "30 FPS", "60 FPS" }); frameRate.Dock = DockStyle.Fill;
-        options.Controls.Add(new Label { Text = "Resolution", AutoSize = true, Anchor = AnchorStyles.Left }, 0, 0);
-        options.Controls.Add(resolution, 1, 0);
-        options.Controls.Add(new Label { Text = "Frame rate", AutoSize = true, Anchor = AnchorStyles.Left, Margin = new Padding(14, 0, 3, 0) }, 2, 0);
-        options.Controls.Add(frameRate, 3, 0);
-        fullscreen.Text = "Fullscreen"; fullscreen.AutoSize = true; fullscreen.Margin = new Padding(3, 12, 3, 12);
-        blur.Text = "Motion blur"; blur.AutoSize = true; blur.Margin = new Padding(3, 12, 3, 12);
-        options.Controls.Add(fullscreen, 1, 1); options.Controls.Add(blur, 3, 1);
+        for (int row = 0; row < 3; row++) options.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        resolution.DropDownStyle = ComboBoxStyle.DropDownList; resolution.FlatStyle = FlatStyle.Flat;
+        resolution.Items.AddRange(new object[] { "720p (1280 × 720)", "1440p (2560 × 1440)" });
+        resolution.Dock = DockStyle.Fill; resolution.Margin = new Padding(0, 0, 12, 0);
+        frameRate.DropDownStyle = ComboBoxStyle.DropDownList; frameRate.FlatStyle = FlatStyle.Flat;
+        frameRate.Items.AddRange(new object[] { "30 FPS", "60 FPS" });
+        frameRate.Dock = DockStyle.Fill; frameRate.Margin = new Padding(0);
+        options.Controls.Add(new Label { Text = "Resolution", AutoSize = true, Margin = new Padding(0, 0, 0, 8) }, 0, 0);
+        options.Controls.Add(new Label { Text = "Frame rate", AutoSize = true, Margin = new Padding(0, 0, 0, 8) }, 1, 0);
+        options.Controls.Add(resolution, 0, 1); options.Controls.Add(frameRate, 1, 1);
+        fullscreen.Text = "Fullscreen"; fullscreen.AutoSize = true; fullscreen.Margin = new Padding(0, 14, 0, 20);
+        blur.Text = "Motion blur"; blur.AutoSize = true; blur.Margin = new Padding(0, 14, 0, 20);
+        options.Controls.Add(fullscreen, 0, 2); options.Controls.Add(blur, 1, 2);
         layout.Controls.Add(options);
 
-        FlowLayoutPanel buttons = new FlowLayoutPanel();
-        buttons.AutoSize = true; buttons.Dock = DockStyle.Top; buttons.Margin = new Padding(0, 4, 0, 10);
-        play.Text = "Play PGR4"; play.AutoSize = true; play.Padding = new Padding(12, 5, 12, 5);
-        geometry.Text = "Geometry Wars"; geometry.AutoSize = true; geometry.Padding = new Padding(8, 5, 8, 5);
-        save.Text = "Save settings"; save.AutoSize = true; save.Padding = new Padding(8, 5, 8, 5);
+        play.Text = "Play"; StyleButton(play, true); play.Dock = DockStyle.Top;
+        play.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+        play.MinimumSize = new Size(0, 48); play.Margin = new Padding(0, 2, 0, 10);
         play.Click += async delegate { await Launch(false); };
+        layout.Controls.Add(play);
+        TableLayoutPanel secondary = new TableLayoutPanel {
+            AutoSize = true, AutoSizeMode = AutoSizeMode.GrowAndShrink, Dock = DockStyle.Top, ColumnCount = 2, RowCount = 1, Margin = new Padding(0, 0, 0, 18)
+        };
+        secondary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        secondary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+        secondary.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        geometry.Text = "Geometry Wars"; StyleButton(geometry, false); geometry.Dock = DockStyle.Top;
+        geometry.Margin = new Padding(0, 0, 12, 0);
+        save.Text = "Save settings"; StyleButton(save, false); save.Dock = DockStyle.Top; save.Margin = new Padding(0);
         geometry.Click += async delegate { await Launch(true); };
         save.Click += delegate { SaveSettings(); };
-        buttons.Controls.Add(play); buttons.Controls.Add(geometry); buttons.Controls.Add(save);
-        layout.Controls.Add(buttons);
-        status.AutoSize = true; status.MaximumSize = new Size(590, 0); status.ForeColor = Color.FromArgb(65, 75, 90);
+        secondary.Controls.Add(geometry, 0, 0); secondary.Controls.Add(save, 1, 0);
+        layout.Controls.Add(secondary);
+        status.AutoSize = true; status.MaximumSize = new Size(510, 0);
+        status.ForeColor = Color.FromArgb(95, 101, 113); status.Margin = new Padding(0);
         layout.Controls.Add(status);
 
         LauncherSettings settings = new LauncherSettings();
@@ -159,6 +217,17 @@ internal sealed class LauncherForm : Form {
         };
     }
 
+    private static void StyleButton(Button button, bool primary) {
+        button.AutoSize = true; button.FlatStyle = FlatStyle.Flat;
+        button.UseVisualStyleBackColor = false;
+        button.BackColor = primary ? Color.FromArgb(196, 38, 50) : Color.FromArgb(235, 237, 241);
+        button.ForeColor = primary ? Color.White : Color.FromArgb(27, 29, 34);
+        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.MouseOverBackColor = primary ? Color.FromArgb(216, 49, 62) : Color.FromArgb(222, 225, 231);
+        button.FlatAppearance.MouseDownBackColor = primary ? Color.FromArgb(163, 28, 40) : Color.FromArgb(209, 213, 221);
+        button.Padding = new Padding(12, 7, 12, 7); button.Margin = new Padding(0);
+        button.Cursor = Cursors.Hand;
+    }
     private static bool ValidFolder(string path) {
         return !string.IsNullOrWhiteSpace(path) && File.Exists(Path.Combine(path, "default.xex")) &&
             Directory.Exists(Path.Combine(path, "Game")) && Directory.Exists(Path.Combine(path, "UI"));
