@@ -215,8 +215,8 @@ internal sealed class LauncherForm : Form {
         string[] gameArgs = new string[0];
         if (frameRate.SelectedIndex == 1) gameArgs = new[] {
             "--pgr4_60fps", "--pgr4_garage_walk_fix", "--d3d12_texture_shared_heaps", "--gpu_vblank_deadline_timer",
-            "--guest_frame_stats", "--gpu_wait_reg_mem_high_res", "--no-clear_memory_page_state", "--gpu_ring_wake_fast",
-            "--gpu_command_stats", "--texture_resource_reuse", "--texture_reuse_pool_limit_mib=256", "--texture_cache_memory_limit_soft_lifetime=30" };
+            "--gpu_wait_reg_mem_high_res", "--no-clear_memory_page_state", "--gpu_ring_wake_fast",
+            "--texture_resource_reuse", "--texture_reuse_pool_limit_mib=256", "--texture_cache_memory_limit_soft_lifetime=30" };
         if (resolution.SelectedIndex == 1) gameArgs = gameArgs.Concat(new[] { "--resolution_scale=2" }).ToArray();
         if (fullscreen.Checked) gameArgs = gameArgs.Concat(new[] { "--fullscreen" }).ToArray();
         if (!blur.Checked) gameArgs = gameArgs.Concat(new[] { "--pgr4_disable_motion_blur" }).ToArray();
