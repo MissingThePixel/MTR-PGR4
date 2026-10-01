@@ -21,9 +21,6 @@ The release includes the runtime and renderer: you do **not** need to install
 ReXGlue to play. Windows x64, a Direct3D 12-capable graphics card and .NET Framework
 4.8 are required. A controller is recommended, particularly for garage walking.
 
-For Quiver Launcher, select **MTR-PGR4.exe**. No special arguments or working
-directory are needed. Keep its accompanying `runtime` folder beside it.
-
 ## Extracting your ISO
 
 The tool used for this project is **XBOX360 ISO Extract 0.6 by somski**. Its
