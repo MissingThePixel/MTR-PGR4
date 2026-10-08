@@ -14,12 +14,13 @@ following the work of [beatrixzy's PGR4-Recomp](https://github.com/beatrixzy/PGR
 2. Extract your own PGR4 disc image as described below. No game files are included.
 3. Open **MTR-PGR4.exe**, choose the extracted game folder with **Browse**, and pick
    your resolution, frame rate, fullscreen and motion blur settings.
-4. Click **Play PGR4**. Settings are remembered. Geometry Wars can be launched from
+4. Click **Play**. Settings are remembered. Geometry Wars can be launched from
    the launcher or the in-game garage; its Exit to PGR4 option is supported.
 
 The release includes the runtime and renderer: you do **not** need to install
 ReXGlue to play. Windows x64, a Direct3D 12-capable graphics card and .NET Framework
 4.8 are required. A controller is recommended, particularly for garage walking.
+The launcher starts the games directly; PowerShell is not needed to play.
 
 ## Extracting your ISO
 

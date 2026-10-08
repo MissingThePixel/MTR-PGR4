@@ -39,7 +39,7 @@ endif()
 # in the same build that runs codegen or changes this patch script.
 set(PGR4_PATCH_STAMP "${CMAKE_CURRENT_BINARY_DIR}/pgr4_game_patches.stamp")
 add_custom_command(OUTPUT "${PGR4_PATCH_STAMP}"
-    COMMAND powershell -NoProfile -ExecutionPolicy Bypass -File
+    COMMAND powershell -NoProfile -File
             "${CMAKE_CURRENT_SOURCE_DIR}/tools/apply_game_patches.ps1"
     COMMAND "${CMAKE_COMMAND}" -E touch "${PGR4_PATCH_STAMP}"
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"

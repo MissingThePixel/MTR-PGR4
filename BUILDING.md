@@ -17,7 +17,7 @@ describes the compiler workload and SDK prerequisites.
 From this repository's root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\setup-sdk.ps1
+& .\scripts\setup-sdk.ps1
 ```
 
 This clones ReXGlue **v0.10.0** at the recorded commit, initializes its pinned
@@ -30,7 +30,7 @@ project's installation. `-SdkDirectory` can select an alternate clone location.
 ## 2. Generate and compile both titles
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\build.ps1 -GameDataRoot "D:\Games\PGR4 extracted"
+& .\scripts\build.ps1 -GameDataRoot "D:\Games\PGR4 extracted"
 ```
 
 The script generates game C++ locally, applies the maintained game edits and
@@ -52,7 +52,7 @@ and generated code. The user-facing project and launcher are **MTR-PGR4**.
 ## 3. Make a clean player release
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File scripts\package-release.ps1
+& .\scripts\package-release.ps1
 ```
 
 The packager uses an explicit file list, includes required license notices and
@@ -66,8 +66,10 @@ Players open `MTR-PGR4.exe` and select their own extracted game folder.
 - `src/pgr4_patches.cpp`: guarded 60 FPS, garage walking and other game helpers.
 - `src/title_handoff.h`: launch-data transfer between the two compiled titles.
 - `patches` and `sdk-overrides`: the SDK modifications required by both titles.
-- `launcher`: the graphical launcher and process broker.
+- `launcher`: the graphical launcher and native C# process/handoff broker.
 
 Preserve the pinned SDK version when regenerating code: changing its partitioning
 or the game executable version can invalidate the function-level patch matches.
 Do not check local manifests or generated game instructions into the repository.
+
+PowerShell scripts are developer build tools only. The player release uses a native C# launcher and includes no scripts or execution-policy bypasses.

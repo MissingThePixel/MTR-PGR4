@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -32,9 +31,9 @@ internal static class Program {
         Application.SetCompatibleTextRenderingDefault(false);
         try {
             string root = AppDomain.CurrentDomain.BaseDirectory;
-            RuntimeDirectory = File.Exists(Path.Combine(root, "launch-games.ps1")) ? root :
-                File.Exists(Path.Combine(root, "runtime", "launch-games.ps1")) ? Path.Combine(root, "runtime") : Path.Combine(root, "source", "playtest");
-            if (!File.Exists(Path.Combine(RuntimeDirectory, "launch-games.ps1")))
+            RuntimeDirectory = File.Exists(Path.Combine(root, "pgr4_recompiled.exe")) ? root :
+                Path.Combine(root, "runtime");
+            if (!File.Exists(Path.Combine(RuntimeDirectory, "pgr4_recompiled.exe")))
                 throw new IOException("The game launcher files are missing. Keep the launcher with the game installation.");
             Application.Run(new LauncherForm());
             return 0;
@@ -83,7 +82,6 @@ internal sealed class LauncherForm : Form {
     private readonly Button save = new LauncherButton();
     private bool running;
     private bool loading = true;
-    private Process gameProcess;
 
     internal LauncherForm() {
         settingsFile = Path.Combine(runtime, "launcher-settings.json");
@@ -267,18 +265,6 @@ internal sealed class LauncherForm : Form {
             return true;
         } catch (Exception error) { MessageBox.Show(this, "Could not save settings: " + error.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error); return false; }
     }
-    private static string Quote(string value) {
-        // CRT command-line quoting, including quotes and trailing backslashes.
-        StringBuilder result = new StringBuilder("\"");
-        int slashes = 0;
-        foreach (char c in value) {
-            if (c == '\\') { slashes++; continue; }
-            if (c == '"') result.Append('\\', slashes * 2 + 1);
-            else result.Append('\\', slashes);
-            result.Append(c); slashes = 0;
-        }
-        result.Append('\\', slashes * 2); result.Append('"'); return result.ToString();
-    }
     private async Task Launch(bool startGeometry) {
         if (!ValidFolder(gameFolder.Text) || !SaveSettings()) return;
         string[] gameArgs = new string[0];
@@ -289,27 +275,14 @@ internal sealed class LauncherForm : Form {
         if (resolution.SelectedIndex == 1) gameArgs = gameArgs.Concat(new[] { "--resolution_scale=2" }).ToArray();
         if (fullscreen.Checked) gameArgs = gameArgs.Concat(new[] { "--fullscreen" }).ToArray();
         if (!blur.Checked) gameArgs = gameArgs.Concat(new[] { "--pgr4_disable_motion_blur" }).ToArray();
-        if (startGeometry) gameArgs = gameArgs.Concat(new[] { "--start-geometry-wars" }).ToArray();
         try {
             running = true; UpdateButtons(); status.Text = "Game running. Your selected settings also apply when returning from Geometry Wars.";
-            string shell = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "WindowsPowerShell", "v1.0", "powershell.exe");
-            ProcessStartInfo info = new ProcessStartInfo(shell,
-                "-NoProfile -ExecutionPolicy Bypass -File " + Quote(Path.Combine(runtime, "launch-games.ps1")) + " -- " + string.Join(" ", gameArgs.Select(Quote)));
-            info.UseShellExecute = false; info.CreateNoWindow = true; info.WorkingDirectory = runtime;
-            info.EnvironmentVariables["PGR4_GAME_ROOT"] = gameFolder.Text;
-            info.RedirectStandardOutput = true; info.RedirectStandardError = true;
-            gameProcess = Process.Start(info);
-            Task<string> output = gameProcess.StandardOutput.ReadToEndAsync();
-            Task<string> errorOutput = gameProcess.StandardError.ReadToEndAsync();
-            await Task.Run(delegate { gameProcess.WaitForExit(); });
-            string transcript = await output + "\r\n" + await errorOutput;
-            Directory.CreateDirectory(Path.Combine(runtime, "logs"));
-            File.WriteAllText(Path.Combine(runtime, "logs", "launcher.log"), transcript);
-            int exitCode = gameProcess.ExitCode;
-            gameProcess.Dispose(); gameProcess = null;
+            GameSession session = new GameSession(runtime, gameFolder.Text, gameArgs, startGeometry);
+            int exitCode = await session.RunAsync(delegate(string message) { status.Text = message; });
             running = false; UpdateButtons();
-            if (exitCode != 0) MessageBox.Show(this, "The game could not finish normally (exit code " + exitCode + ").\r\n\r\n" + transcript.Trim() +
-                "\r\n\r\nDetails are saved in logs\\launcher.log.", Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
+            if (exitCode != 0) MessageBox.Show(this,
+                "The game could not finish normally (exit code " + exitCode + ").\r\n\r\nDetails are saved in logs\\launcher.log.",
+                Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
         } catch (Exception error) {
             running = false; UpdateButtons();
             MessageBox.Show(this, error.Message, Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
