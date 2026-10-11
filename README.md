@@ -4,8 +4,12 @@
 
 A Windows PC recompilation of Project Gotham Racing 4, with a graphical launcher,
 720p/1440p rendering, 30/60 FPS options, optional motion blur, and the garage's
-Geometry Wars game. Built with [ReXGlue](https://github.com/rexglue/rexglue-sdk),
-following the work of [beatrixzy's PGR4-Recomp](https://github.com/beatrixzy/PGR4-Recomp).
+Geometry Wars game. Built with [ReXGlue](https://github.com/rexglue/rexglue-sdk).
+
+Work on MTR-PGR4 began from [beatrixzy's PGR4-Recomp](https://github.com/beatrixzy/PGR4-Recomp).
+Their initial recompilation project provided the starting point for this work;
+thank you to beatrixzy and the earlier contributors credited below. MTR-PGR4 is
+maintained independently and is not affiliated with or endorsed by PGR4-Recomp.
 
 ## Getting started
 
@@ -41,6 +45,10 @@ Use your own legally obtained game dump. Preserve the complete extraction; movin
 only the XEX files is insufficient. The game folder can be on another drive.
 
 ## Known bugs
+
+MTR-PGR4 relies on Xenia's graphics renderer through ReXGlue, with modifications
+made for this project. Graphics problems inherited from Xenia are likely to
+appear here too, although fixes and behavior can differ between builds.
 
 - Vibration and engine noise can disappear at high RPM ranges.
 - Small frame-rate hitches remain in certain maps.

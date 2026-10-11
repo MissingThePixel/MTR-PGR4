@@ -3,20 +3,26 @@
 ## PGR4-Recomp lineage
 
 This project began from [beatrixzy/PGR4-Recomp](https://github.com/beatrixzy/PGR4-Recomp),
-at commit `464cc5b62527755d6a365b36a0e40ff843d722e9`.
+at commit `464cc5b62527755d6a365b36a0e40ff843d722e9`. MTR-PGR4 is maintained
+independently and is not affiliated with or endorsed by PGR4-Recomp.
 
-- The initial PGR4 manifest, discovered function addresses and project setup came
-  from that project. These addresses and build metadata are retained and credited.
-- Its minimal `src/main.cpp`, app class and CMake scaffolding are generated
-  ReXGlue templates. Those templates can be independently obtained from the
-  licensed ReXGlue SDK's `resources/templates/init` directory. The app lifecycle
-  hooks and build changes here extend that SDK scaffolding.
+MTR-PGR4 began from beatrixzy's PGR4-Recomp project. It retains the initial game
+configuration, recorded function locations and build setup. This groundwork
+helps ReXGlue turn the original Xbox 360 executable into a PC build. Credit for
+this foundational work belongs to beatrixzy and the earlier contributors.
+MTR-PGR4 builds on it with additional game fixes, runtime improvements and its
+own launcher.
+
+- Its initial `src/main.cpp`, app class and CMake scaffolding were based on
+  ReXGlue's templates, available in the SDK's `resources/templates/init` directory.
+  These files were inherited through PGR4-Recomp, and that contribution is credited
+  here. MTR-PGR4 extends the application hooks and build setup.
 - Upstream's README credits **Tera / Creesic** for the earlier recompilation work.
   That credit is retained here. Thanks to beatrixzy for publishing the starting
   project and making these improvements possible.
-- The inspected PGR4-Recomp snapshot has no explicit license file. Its README's
-  credits are not represented as a license grant, and MTR-PGR4's MIT license does
-  not relicense any independently authored upstream material.
+- PGR4-Recomp is now published under the [MIT license](https://github.com/beatrixzy/PGR4-Recomp/blob/main/LICENSE),
+  copyright (c) 2026 Bea. Its copyright and permission notice are retained in
+  `LICENSES/PGR4-Recomp-MIT.txt`. Upstream material remains credited to its authors.
 
 Upstream documentation, repository history, generated game C++, executables,
 game files and local testing material are not copied into this source repository.
@@ -30,8 +36,11 @@ game files and local testing material are not copied into this source repository
 - SDK changes are distributed as `patches/rexglue-v0.10.0.patch` plus the new
   source files in `sdk-overrides`. Original copyright headers are preserved.
 - [Xenia](https://github.com/xenia-project/xenia) and
-  [Xenia Canary](https://github.com/xenia-canary/xenia-canary): comparison reference
-  for music service behavior, renderer behavior and PowerPC instruction handling.
+  [Xenia Canary](https://github.com/xenia-canary/xenia-canary): ReXGlue's graphics
+  renderer is derived from Xenia. This project uses that renderer with modifications,
+  so inherited Xenia graphics problems are likely to appear here too. Xenia also
+  served as a comparison reference for music service behavior, renderer behavior
+  and PowerPC instruction handling.
 - The 60 FPS and motion-blur game edits follow the addresses/instruction changes
   in the [Xenia Canary PGR4 patches](https://github.com/xenia-canary/game-patches/blob/main/patches/4D5307F9%20-%20Project%20Gotham%20Racing%204.patch.toml).
 
